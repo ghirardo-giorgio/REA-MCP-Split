@@ -20,6 +20,7 @@ uses: the `session,core` trunk costs ≈ 163k tokens, a `firmware` slice adds ju
 | [`rea-mcp-filter.mjs`](rea-mcp-filter.mjs) | MCP stdio proxy: transparent pipe to `rea mcp`, filters `tools/list` and intercepts `tools/call` for disabled tools |
 | [`probe_tools_list.mjs`](probe_tools_list.mjs) | Minimal MCP client: `initialize` + `tools/list` → saves the full inventory |
 | [`probe_call.mjs`](probe_call.mjs) | Split verification: calls one allowed and one disallowed tool through the proxy |
+| [`update-catalog.mjs`](update-catalog.mjs) | Syncs the group catalog with the live `rea mcp` server after a `rea update` (diff, keyword classification, marker-block rewrite; `--check` exits 1 on drift) |
 | [`rea_tools_inventory_full.json`](rea_tools_inventory_full.json) | Full inventory of the 139 tools (generated with REA 6.3.0) |
 | [`rea_tools_inventory.json`](rea_tools_inventory.json) | Snapshot generated *through* the filter (`firmware` group, 7 tools) — an example of the split result |
 
@@ -173,12 +174,25 @@ this verification, REA 6.3.0 on Linux x64:
 - `SIGTERM`/`SIGINT`/`SIGHUP` are forwarded to the child and the proxy exits:
   without this, the ~330 MB `rea mcp` grandchild would outlive the proxy.
 
-## Maintenance
+## Maintenance — handling `rea update`
 
-- The `GROUPS` catalog inside `rea-mcp-filter.mjs` is **pinned to REA@6.3.0**.
-  After a `rea update`: regenerate the inventory (step 1), diff the tool names
-  against `GROUPS` and update it.
-- New tools not assigned to any group stay invisible until you add them to
+REA ships new tools frequently. After a `rea update`, sync the catalog:
+
+```bash
+node update-catalog.mjs --check   # drift report; exit 1 if catalog != live server
+node update-catalog.mjs           # rewrite the catalog block in rea-mcp-filter.mjs
+node update-catalog.mjs --inventory-out rea_tools_inventory_full.json
+```
+
+- The `GROUPS` catalog lives between `BEGIN/END CATALOG` markers inside
+  `rea-mcp-filter.mjs` and is **machine-managed**: edit by hand only outside
+  the markers. `PINNED_REA_VERSION` is rewritten along with it.
+- New tools are assigned to groups by keyword rules; the script prints where
+  each one landed (`new_tool_assignments`) — review the report and move
+  anything misclassified by hand. Existing membership is never re-shuffled.
+- The rewrite is syntax-checked with `node --check` before being kept.
+- `--check` is cron/CI-friendly: a non-zero exit means the filter needs an update.
+- Tools not assigned to any group stay invisible until you add them to
   `GROUPS` (or use `REA_MCP_TOOLS` / `REA_MCP_ALL=1`).
 
 ## License
