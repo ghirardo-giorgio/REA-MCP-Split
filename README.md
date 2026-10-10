@@ -181,6 +181,10 @@ this verification, REA 6.3.0 on Linux x64:
 - New tools not assigned to any group stay invisible until you add them to
   `GROUPS` (or use `REA_MCP_TOOLS` / `REA_MCP_ALL=1`).
 
+## License
+
+[MIT](LICENSE)
+
 ## References
 
 - REA repository: <https://github.com/morluto/rea>
