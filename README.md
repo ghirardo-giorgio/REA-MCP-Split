@@ -1,5 +1,7 @@
 # REA MCP Split — dividere il server MCP di REA per dominio
 
+**Italiano** · [English](README.en.md)
+
 [morluto/rea](https://github.com/morluto/rea) espone **139 tool MCP** tramite `rea mcp`.
 Registrare tutto il catalogo in un unico entry MCP significa che ogni sessione paga
 l'elenco completo dei tool al modello: **≈ 534k token** (1.87M caratteri JSON,
